@@ -3,6 +3,8 @@ import { nanoid } from "nanoid";
 import { client, rowToObject, rowsToObjects } from "../db.js";
 import { PARTNER_TYPES, US_STATES, COUNTRY_CODES } from "../constants.js";
 import { sendCsv } from "../csv.js";
+import { requireAdmin } from "../auth.js";
+import { logAction } from "../audit.js";
 import {
   isValidEmail,
   isValidPhone,
@@ -280,6 +282,7 @@ function validatePartnerPayload(b, { requireRepresentatives }) {
 
 partnersRouter.post(
   "/",
+  requireAdmin,
   ah(async (req, res) => {
     const b = req.body || {};
     b.partnerId = normalizeId(b.partnerId);
@@ -353,6 +356,7 @@ partnersRouter.post(
       await tx.commit();
 
       const row = rowToObject(await client.execute({ sql: `SELECT * FROM partners WHERE id = ?`, args: [partnerPk] }));
+      await logAction(req.admin.email, "partner_created", { entityType: "partner", entityId: row.partner_id });
       res.status(201).json(serializePartner(row));
     } catch (err) {
       await tx.rollback();
@@ -363,6 +367,7 @@ partnersRouter.post(
 
 partnersRouter.put(
   "/:partnerId",
+  requireAdmin,
   ah(async (req, res) => {
     const existing = await fetchPartnerRow(req.params.partnerId);
     if (!existing) return res.status(404).json({ error: "Partner not found" });
@@ -470,6 +475,7 @@ partnersRouter.put(
 
       const row = rowToObject(await client.execute({ sql: `SELECT * FROM partners WHERE id = ?`, args: [existing.id] }));
       const reps = (await fetchRepresentatives(existing.id)).map(serializeRep);
+      await logAction(req.admin.email, "partner_updated", { entityType: "partner", entityId: row.partner_id });
       res.json({ ...serializePartner(row), representatives: reps });
     } catch (err) {
       await tx.rollback();

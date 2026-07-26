@@ -1,11 +1,8 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import {
-  signSessionToken,
-  setSessionCookie,
-  clearSessionCookie,
-  getSessionFromRequest
-} from "../auth.js";
+import { client, rowToObject } from "../db.js";
+import { signSessionToken, setSessionCookie, clearSessionCookie, getCurrentUser, requireAuth } from "../auth.js";
+import { logAction } from "../audit.js";
 
 export const authRouter = Router();
 
@@ -19,28 +16,37 @@ authRouter.post(
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || "";
-    const adminHash = process.env.ADMIN_PASSWORD_HASH || "";
+    const user = rowToObject(
+      await client.execute({ sql: `SELECT * FROM users WHERE lower(email) = lower(?)`, args: [email.trim()] })
+    );
+    const passwordMatches = user ? await bcrypt.compare(password, user.password_hash) : false;
 
-    const emailMatches = email.trim().toLowerCase() === adminEmail.trim().toLowerCase();
-    const passwordMatches = adminHash ? await bcrypt.compare(password, adminHash) : false;
-
-    if (!emailMatches || !passwordMatches) {
+    if (!user || !passwordMatches) {
+      await logAction(email.trim().toLowerCase(), "login_failed");
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const token = signSessionToken(adminEmail);
+    const token = signSessionToken(user);
     setSessionCookie(res, token);
-    res.json({ email: adminEmail });
+    await logAction(user.email, "login");
+    res.json({ email: user.email, role: user.role });
   })
 );
 
-authRouter.post("/logout", (req, res) => {
-  clearSessionCookie(res);
-  res.json({ ok: true });
-});
+authRouter.post(
+  "/logout",
+  requireAuth,
+  ah(async (req, res) => {
+    clearSessionCookie(res);
+    await logAction(req.admin.email, "logout");
+    res.json({ ok: true });
+  })
+);
 
-authRouter.get("/session", (req, res) => {
-  const session = getSessionFromRequest(req);
-  res.json(session ? { authenticated: true, email: session.email } : { authenticated: false });
-});
+authRouter.get(
+  "/session",
+  ah(async (req, res) => {
+    const admin = await getCurrentUser(req);
+    res.json(admin ? { authenticated: true, email: admin.email, role: admin.role } : { authenticated: false });
+  })
+);

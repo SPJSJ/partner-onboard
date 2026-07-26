@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { client, rowToObject } from "./db.js";
 
 const COOKIE_NAME = "pob_session";
 const SESSION_TTL = "12h";
@@ -11,11 +12,11 @@ function requiredEnv(name) {
   return value;
 }
 
-export function signSessionToken(email) {
-  return jwt.sign({ email }, requiredEnv("SESSION_SECRET"), { expiresIn: SESSION_TTL });
+export function signSessionToken(user) {
+  return jwt.sign({ userId: user.id, email: user.email }, requiredEnv("SESSION_SECRET"), { expiresIn: SESSION_TTL });
 }
 
-export function verifySessionToken(token) {
+function verifySessionToken(token) {
   try {
     return jwt.verify(token, requiredEnv("SESSION_SECRET"));
   } catch {
@@ -37,17 +38,30 @@ export function clearSessionCookie(res) {
   res.clearCookie(COOKIE_NAME, { path: "/" });
 }
 
-export function getSessionFromRequest(req) {
+// Re-fetches the user row on every request (rather than trusting a role
+// embedded in the JWT) so a role change or account deletion takes effect
+// immediately instead of waiting out the token's 12h lifetime.
+export async function getCurrentUser(req) {
   const token = req.cookies?.[COOKIE_NAME];
-  if (!token) return null;
-  return verifySessionToken(token);
+  const payload = token ? verifySessionToken(token) : null;
+  if (!payload) return null;
+
+  const user = rowToObject(await client.execute({ sql: `SELECT * FROM users WHERE id = ?`, args: [payload.userId] }));
+  return user ? { userId: user.id, email: user.email, role: user.role } : null;
 }
 
-export function requireAuth(req, res, next) {
-  const session = getSessionFromRequest(req);
-  if (!session) {
+export async function requireAuth(req, res, next) {
+  const admin = await getCurrentUser(req);
+  if (!admin) {
     return res.status(401).json({ error: "Not authenticated" });
   }
-  req.admin = session;
+  req.admin = admin;
+  next();
+}
+
+export function requireAdmin(req, res, next) {
+  if (req.admin?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
   next();
 }

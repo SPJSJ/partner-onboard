@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function PartnerListPage() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [partners, setPartners] = useState([]);
   const [search, setSearch] = useState("");
   const [partnerType, setPartnerType] = useState("");
@@ -39,9 +41,11 @@ export default function PartnerListPage() {
           <a className="btn btn-secondary" href={api.partnersExportUrl(params)}>
             Export CSV
           </a>
-          <button className="btn btn-primary" onClick={() => navigate("/partners/new")}>
-            + Add Partner
-          </button>
+          {isAdmin && (
+            <button className="btn btn-primary" onClick={() => navigate("/partners/new")}>
+              + Add Partner
+            </button>
+          )}
         </div>
       </div>
 
@@ -75,9 +79,11 @@ export default function PartnerListPage() {
         ) : partners.length === 0 ? (
           <div className="empty-state">
             No partners found.{" "}
-            <button className="btn-link" onClick={() => navigate("/partners/new")}>
-              Add your first partner
-            </button>
+            {isAdmin && (
+              <button className="btn-link" onClick={() => navigate("/partners/new")}>
+                Add your first partner
+              </button>
+            )}
           </div>
         ) : (
           <table>
@@ -109,16 +115,18 @@ export default function PartnerListPage() {
                   <td>{p.leadCount}</td>
                   <td>{new Date(p.createdAt).toLocaleDateString()}</td>
                   <td>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/partners/${encodeURIComponent(p.partnerId)}/edit`);
-                      }}
-                    >
-                      Edit
-                    </button>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/partners/${encodeURIComponent(p.partnerId)}/edit`);
+                        }}
+                      >
+                        Edit
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

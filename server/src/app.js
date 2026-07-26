@@ -1,10 +1,14 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { requireAuth } from "./auth.js";
+import { requireAuth, requireAdmin } from "./auth.js";
 import { authRouter } from "./routes/auth.js";
 import { partnersRouter } from "./routes/partners.js";
 import { leadsRouter } from "./routes/leads.js";
+import { representativesRouter } from "./routes/representatives.js";
+import { insightsRouter } from "./routes/insights.js";
+import { usersRouter } from "./routes/users.js";
+import { auditLogRouter } from "./routes/auditLog.js";
 import { publicRouter } from "./routes/public.js";
 
 export const app = express();
@@ -20,6 +24,10 @@ app.use("/api/public", publicRouter);
 
 app.use("/api/partners", requireAuth, partnersRouter);
 app.use("/api/leads", requireAuth, leadsRouter);
+app.use("/api/representatives", requireAuth, representativesRouter);
+app.use("/api/insights", requireAuth, insightsRouter);
+app.use("/api/users", requireAuth, requireAdmin, usersRouter);
+app.use("/api/audit-log", requireAuth, requireAdmin, auditLogRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

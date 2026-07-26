@@ -57,6 +57,25 @@ await client.executeMultiple(`
     message TEXT,
     submitted_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'admin',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_email TEXT,
+    action TEXT NOT NULL,
+    entity_type TEXT,
+    entity_id TEXT,
+    details TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // --- Safe, additive migrations: only add columns that are missing so
@@ -83,3 +102,15 @@ export function rowToObject(result) {
 
 await ensureColumn("partners", "updated_at", "TEXT", "created_at");
 await ensureColumn("representatives", "updated_at", "TEXT", "created_at");
+
+// Bootstrap the first admin account from env vars so existing deployments
+// (and local dev) keep working once auth moves from env-only to a real
+// users table. Only runs when the users table is empty — never touches an
+// existing account.
+const userCount = rowToObject(await client.execute("SELECT COUNT(*) c FROM users")).c;
+if (userCount === 0 && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD_HASH) {
+  await client.execute({
+    sql: `INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'admin')`,
+    args: [process.env.ADMIN_EMAIL.trim().toLowerCase(), process.env.ADMIN_PASSWORD_HASH]
+  });
+}

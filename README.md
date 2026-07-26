@@ -13,8 +13,11 @@ that come back in. Requires admin login; the per-partner lead form itself stays 
   a hosted Turso database over the network, since Vercel functions have no persistent
   local disk.
 - **Client**: React + Vite, built to static files and served from the same Vercel project.
-- **Auth**: a single admin account (email + bcrypt-hashed password, both env vars), a
-  signed JWT in an httpOnly cookie for the session. No third-party auth provider.
+- **Auth**: multi-user accounts stored in the `users` table (email + bcrypt-hashed
+  password + role), a signed JWT in an httpOnly cookie for the session. No third-party
+  auth provider. `ADMIN_EMAIL`/`ADMIN_PASSWORD_HASH` env vars only matter once, to seed
+  the very first admin account when the `users` table is empty — after that, manage
+  accounts from the Users and Roles page.
 
 ## Local setup
 
@@ -27,7 +30,7 @@ This starts the API on `http://localhost:3001` and the web app on `http://localh
 (the Vite dev server proxies `/api` to the backend). Open `http://localhost:5173` — you'll
 land on `/login`.
 
-You need `server/.env` with at least the admin credentials before you can log in locally
+You need `server/.env` with at least these before you can log in locally the first time
 (see `server/.env.example`):
 
 ```
@@ -61,56 +64,78 @@ is created automatically at `server/data/partners.db`.
    - `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` — from step 1
    - `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `SESSION_SECRET` — same values as your local
      `server/.env`, or generate fresh ones for production
-   - `NODE_ENV=production` — makes the session cookie `Secure` (Vercel sets this
-     automatically in most cases, but confirm it's present)
+   - Do **not** set `NODE_ENV` yourself — Vercel sets it to `production` automatically at
+     runtime, and setting it as a project env var makes `npm install` skip
+     `devDependencies` during the build, which breaks the client build (`vite: command
+     not found`). This bit us once already.
 
 4. Deploy. The app and API share one domain, so there's no CORS to configure, and partner
    form links (`/form/:token`) are built from the browser's actual origin at runtime — they
    will point at your Vercel domain automatically, never `localhost`.
 
+5. If you deploy again later via `vercel --prod` from the CLI instead of a git push, note
+   that it does **not** automatically repoint a custom alias (e.g.
+   `your-project.vercel.app`) that was set some other way — you may need
+   `vercel alias set <new-deployment-url> <your-domain>` after a CLI deploy.
+
 ## What's included
 
-- **Login / logout** (`/login`) — the only public admin-adjacent page. All `/partners/*`
-  and `/leads` pages and their APIs require a valid session; unauthenticated visits
-  redirect to `/login`.
+- **Login / logout** (`/login`) — the only public admin-adjacent page. Every other admin
+  page and API requires a valid session; unauthenticated visits redirect to `/login`.
+- **Two roles**: **Admin** (full access) and **Viewer** (read-only — can view and export
+  everything, cannot create/edit Partners or manage Users).
+- **Dashboard** (`/dashboard`) — partner/representative/lead counts, leads in the last
+  7/30 days, Partners by Type, and the 5 most recent leads.
 - **Partners list** (`/partners`) — search by Partner ID, Partner Name, Contact Name, or
-  Contact Email; filter by Partner Type; CSV export; Edit action per row.
-- **Add Partner** (`/partners/new`) — Partner details, Contact information, Billing
-  address, one or more Representatives (exactly one must be Primary), and a live
+  Contact Email; filter by Partner Type; CSV export; Edit action per row (admin only).
+- **Add Partner** (`/partners/new`, admin only) — Partner details, Contact information,
+  Billing address, one or more Representatives (exactly one must be Primary), and a live
   validation panel backed by real server checks (ID availability, email/phone/ZIP format,
   exact-duplicate detection).
-- **Edit Partner** (`/partners/:partnerId/edit`) — same fields as Add. The public form
-  link and all submitted leads are preserved across edits. Removing an existing
-  Representative requires an explicit confirmation dialog; it's never silent.
+- **Edit Partner** (`/partners/:partnerId/edit`, admin only) — same fields as Add. The
+  public form link and all submitted leads are preserved across edits. Removing an
+  existing Representative requires an explicit confirmation dialog; it's never silent.
 - **Partner detail** (`/partners/:partnerId`) — full record, Representatives (Primary
   flagged), the permanent public form link (copy/open), and every lead submitted through
   it, with a CSV export scoped to that partner.
+- **Representatives** (`/representatives`) — every representative across every partner,
+  searchable, linking back to its partner.
 - **Public lead form** (`/form/:token`) — no login required. Partner ID and Partner Name
   are pre-filled and read only; the submit button disables while processing to avoid
   duplicate submissions from repeated clicks.
 - **Leads** (`/leads`) — every lead across every partner, searchable by lead name, email,
   Partner ID, or Partner Name, filterable by submission date range, with CSV export.
+- **Reports** (`/reports`) — Partners by Type, Leads by Month, Leads by Partner, plus
+  one-click CSV export for Partners and Leads.
+- **Users and Roles** (`/users`, admin only) — create accounts (email + password you set
+  directly, no email-sending infrastructure), change role, reset password, delete a user.
+  Blocks deleting your own account and demoting/deleting the last remaining admin, so you
+  can't lock yourself out.
+- **Audit Log** (`/audit-log`, admin only) — logs, filterable/searchable/exportable:
+  login/login-failed/logout, Partner created/updated, and User created/updated/deleted,
+  each with the acting user's email and timestamp.
 
 ## Environment variables
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `ADMIN_EMAIL` | Yes | Admin login email |
-| `ADMIN_PASSWORD_HASH` | Yes | bcrypt hash of the admin password — never the plaintext |
+| `ADMIN_EMAIL` | Only to seed the first account | Bootstraps one admin user when the `users` table is empty |
+| `ADMIN_PASSWORD_HASH` | Only to seed the first account | bcrypt hash — never the plaintext |
 | `SESSION_SECRET` | Yes | Signs the session JWT |
 | `TURSO_DATABASE_URL` | Production only | Hosted DB URL; unset locally to use the SQLite file |
 | `TURSO_AUTH_TOKEN` | Production only | Hosted DB auth token |
-| `NODE_ENV` | Production | Set to `production` so the session cookie is marked `Secure` |
 
 Never commit `server/.env` — it's gitignored. `server/.env.example` documents the shape
-with no real values.
+with no real values. Do not set `NODE_ENV` as a project env var (see deploy step 3).
 
 ## Notes / limitations
 
-- Single admin account by design (this release didn't call for multi-user roles).
 - Partner deletion is intentionally not implemented (per spec, until a safe archive
   process is designed).
 - Partner Type / State / Country Code option lists live in `server/src/constants.js` —
   edit there to add more.
 - Duplicate-lead-submission prevention is client-side (disabled submit button while
   processing); there's no server-side idempotency window for retried network requests.
+- Sessions are stateless JWTs (12h expiry) re-validated against the `users` table on every
+  request — a role change or account deletion takes effect immediately, but "logout" only
+  clears the browser's cookie, it doesn't invalidate the token itself before it expires.

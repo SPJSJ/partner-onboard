@@ -4,14 +4,19 @@ import { api } from "../api/client.js";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [status, setStatus] = useState({ loading: true, authenticated: false, email: null });
+  const [status, setStatus] = useState({ loading: true, authenticated: false, email: null, role: null });
 
   const refresh = useCallback(async () => {
     try {
       const session = await api.getSession();
-      setStatus({ loading: false, authenticated: !!session.authenticated, email: session.email || null });
+      setStatus({
+        loading: false,
+        authenticated: !!session.authenticated,
+        email: session.email || null,
+        role: session.role || null
+      });
     } catch {
-      setStatus({ loading: false, authenticated: false, email: null });
+      setStatus({ loading: false, authenticated: false, email: null, role: null });
     }
   }, []);
 
@@ -26,10 +31,14 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     await api.logout();
-    setStatus({ loading: false, authenticated: false, email: null });
+    setStatus({ loading: false, authenticated: false, email: null, role: null });
   }
 
-  return <AuthContext.Provider value={{ ...status, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ ...status, isAdmin: status.role === "admin", login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

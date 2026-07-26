@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function PartnerDetailPage() {
   const { partnerId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [partner, setPartner] = useState(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -60,9 +62,11 @@ export default function PartnerDetailPage() {
           <button className="btn btn-secondary" onClick={() => navigate("/partners")}>
             Back to Partners
           </button>
-          <button className="btn btn-primary" onClick={() => navigate(`/partners/${encodeURIComponent(partnerId)}/edit`)}>
-            Edit Partner
-          </button>
+          {isAdmin && (
+            <button className="btn btn-primary" onClick={() => navigate(`/partners/${encodeURIComponent(partnerId)}/edit`)}>
+              Edit Partner
+            </button>
+          )}
         </div>
       </div>
 

@@ -3,11 +3,16 @@ import Sidebar from "./Sidebar.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 function getBreadcrumb(pathname) {
+  if (pathname === "/dashboard") return "Dashboard";
   if (pathname === "/partners") return "Partners";
   if (pathname === "/partners/new") return "Partners / Add Partner";
   if (pathname.endsWith("/edit")) return "Partners / Edit Partner";
   if (pathname.startsWith("/partners/")) return "Partners / Partner Detail";
+  if (pathname.startsWith("/representatives")) return "Representatives";
   if (pathname.startsWith("/leads")) return "Leads";
+  if (pathname.startsWith("/reports")) return "Reports";
+  if (pathname.startsWith("/users")) return "Users and Roles";
+  if (pathname.startsWith("/audit-log")) return "Audit Log";
   return "";
 }
 
@@ -19,7 +24,7 @@ function initials(email) {
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { email, logout } = useAuth();
+  const { email, role, logout } = useAuth();
 
   async function handleLogout() {
     await logout();
@@ -36,7 +41,9 @@ export default function Layout() {
             <div className="avatar">{initials(email)}</div>
             <div>
               <div className="topbar-user-name">{email}</div>
-              <div className="topbar-user-role">Administrator</div>
+              <div className="topbar-user-role" style={{ textTransform: "capitalize" }}>
+                {role}
+              </div>
             </div>
             <button type="button" className="btn btn-secondary btn-sm" onClick={handleLogout} style={{ marginLeft: 12 }}>
               Log Out
