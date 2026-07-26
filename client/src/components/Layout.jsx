@@ -9,7 +9,6 @@ function getBreadcrumb(pathname) {
   if (pathname.endsWith("/edit")) return "Partners / Edit Partner";
   if (pathname.startsWith("/partners/")) return "Partners / Partner Detail";
   if (pathname.startsWith("/representatives")) return "Representatives";
-  if (pathname.startsWith("/leads")) return "Leads";
   if (pathname.startsWith("/reports")) return "Reports";
   if (pathname.startsWith("/users")) return "Users and Roles";
   if (pathname.startsWith("/audit-log")) return "Audit Log";

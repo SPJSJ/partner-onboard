@@ -10,17 +10,14 @@ import AddPartnerPage from "./pages/AddPartnerPage.jsx";
 import EditPartnerPage from "./pages/EditPartnerPage.jsx";
 import PartnerDetailPage from "./pages/PartnerDetailPage.jsx";
 import RepresentativesPage from "./pages/RepresentativesPage.jsx";
-import LeadsPage from "./pages/LeadsPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import UsersPage from "./pages/UsersPage.jsx";
 import AuditLogPage from "./pages/AuditLogPage.jsx";
-import PublicLeadFormPage from "./pages/PublicLeadFormPage.jsx";
 
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/form/:token" element={<PublicLeadFormPage />} />
         <Route path="/login" element={<LoginPage />} />
 
         <Route element={<ProtectedRoute />}>
@@ -30,7 +27,6 @@ export default function App() {
             <Route path="/partners" element={<PartnerListPage />} />
             <Route path="/partners/:partnerId" element={<PartnerDetailPage />} />
             <Route path="/representatives" element={<RepresentativesPage />} />
-            <Route path="/leads" element={<LeadsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
 
             <Route element={<RequireRole role="admin" />}>

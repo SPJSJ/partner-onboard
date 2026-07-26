@@ -78,8 +78,6 @@ function serializePartner(row) {
     zipCode: row.zip_code,
     countryCode: row.country_code,
     status: row.status,
-    formToken: row.form_token,
-    formLink: `/form/${row.form_token}`,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     createdBy: row.created_by,
@@ -110,12 +108,6 @@ async function fetchRepresentatives(partnerPk) {
       sql: `SELECT * FROM representatives WHERE partner_pk = ? ORDER BY is_primary DESC, created_at ASC`,
       args: [partnerPk]
     })
-  );
-}
-
-async function fetchLeads(partnerPk) {
-  return rowsToObjects(
-    await client.execute({ sql: `SELECT * FROM leads WHERE partner_pk = ? ORDER BY submitted_at DESC`, args: [partnerPk] })
   );
 }
 
@@ -167,10 +159,7 @@ partnersRouter.get(
       const repCount = rowToObject(
         await client.execute({ sql: `SELECT COUNT(*) c FROM representatives WHERE partner_pk = ?`, args: [row.id] })
       ).c;
-      const leadCount = rowToObject(
-        await client.execute({ sql: `SELECT COUNT(*) c FROM leads WHERE partner_pk = ?`, args: [row.id] })
-      ).c;
-      out.push({ ...serializePartner(row), representativeCount: repCount, leadCount: leadCount });
+      out.push({ ...serializePartner(row), representativeCount: repCount });
     }
 
     res.json(out);
@@ -194,10 +183,7 @@ partnersRouter.get(
       const repCount = rowToObject(
         await client.execute({ sql: `SELECT COUNT(*) c FROM representatives WHERE partner_pk = ?`, args: [row.id] })
       ).c;
-      const leadCount = rowToObject(
-        await client.execute({ sql: `SELECT COUNT(*) c FROM leads WHERE partner_pk = ?`, args: [row.id] })
-      ).c;
-      out.push({ ...serializePartner(row), representativeCount: repCount, leadCount });
+      out.push({ ...serializePartner(row), representativeCount: repCount });
     }
 
     sendCsv(
@@ -219,7 +205,6 @@ partnersRouter.get(
         { key: "countryCode", label: "Country Code" },
         { key: "status", label: "Status" },
         { key: "representativeCount", label: "Representatives" },
-        { key: "leadCount", label: "Leads" },
         { key: "createdAt", label: "Created At" },
         { key: "createdBy", label: "Created By" },
         { key: "updatedAt", label: "Updated At" },
@@ -237,17 +222,8 @@ partnersRouter.get(
     if (!row) return res.status(404).json({ error: "Partner not found" });
 
     const representatives = (await fetchRepresentatives(row.id)).map(serializeRep);
-    const leads = (await fetchLeads(row.id)).map((l) => ({
-      id: l.id,
-      firstName: l.first_name,
-      lastName: l.last_name,
-      email: l.email,
-      phone: l.phone,
-      message: l.message,
-      submittedAt: l.submitted_at
-    }));
 
-    res.json({ ...serializePartner(row), representatives, leads });
+    res.json({ ...serializePartner(row), representatives });
   })
 );
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 
 export default function ReportsPage() {
@@ -14,14 +13,11 @@ export default function ReportsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Reports</h1>
-          <p className="page-subtitle">Breakdowns and exports for Partners and Leads</p>
+          <p className="page-subtitle">Breakdowns and exports for Partners</p>
         </div>
         <div className="page-header-actions">
           <a className="btn btn-secondary" href={api.partnersExportUrl({})}>
             Export Partners CSV
-          </a>
-          <a className="btn btn-secondary" href={api.leadsExportUrl({})}>
-            Export Leads CSV
           </a>
         </div>
       </div>
@@ -29,68 +25,21 @@ export default function ReportsPage() {
       {!data ? (
         <div className="empty-state">Loading...</div>
       ) : (
-        <div className="detail-grid">
-          <div className="card">
-            <div className="card-title">Partners by Type</div>
-            <hr className="card-divider" />
-            {data.partnersByType.length === 0 ? (
-              <div className="empty-state">No partners yet.</div>
-            ) : (
-              <div className="kv-list">
-                {data.partnersByType.map((row) => (
-                  <div className="kv-row" key={row.type}>
-                    <span className="kv-label">{row.type}</span>
-                    <span className="kv-value">{row.count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="card">
-            <div className="card-title">Leads by Month</div>
-            <hr className="card-divider" />
-            {data.leadsByMonth.length === 0 ? (
-              <div className="empty-state">No leads yet.</div>
-            ) : (
-              <div className="kv-list">
-                {data.leadsByMonth.map((row) => (
-                  <div className="kv-row" key={row.month}>
-                    <span className="kv-label">{row.month}</span>
-                    <span className="kv-value">{row.count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="card" style={{ gridColumn: "1 / -1" }}>
-            <div className="card-title">Leads by Partner</div>
-            <hr className="card-divider" />
-            {data.leadsByPartner.length === 0 ? (
-              <div className="empty-state">No partners yet.</div>
-            ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Partner</th>
-                    <th>Leads</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.leadsByPartner.map((row) => (
-                    <tr key={row.partnerId}>
-                      <td>
-                        <Link to={`/partners/${encodeURIComponent(row.partnerId)}`}>{row.partnerName}</Link>
-                        <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{row.partnerId}</div>
-                      </td>
-                      <td>{row.leadCount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+        <div className="card">
+          <div className="card-title">Partners by Type</div>
+          <hr className="card-divider" />
+          {data.partnersByType.length === 0 ? (
+            <div className="empty-state">No partners yet.</div>
+          ) : (
+            <div className="kv-list">
+              {data.partnersByType.map((row) => (
+                <div className="kv-row" key={row.type}>
+                  <span className="kv-label">{row.type}</span>
+                  <span className="kv-value">{row.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

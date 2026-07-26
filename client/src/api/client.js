@@ -38,9 +38,6 @@ export const api = {
   validatePartner: (payload) => request("/partners/validate", { method: "POST", body: JSON.stringify(payload) }),
   partnersExportUrl: (params) => `/api/partners/export${toQueryString(params)}`,
 
-  listLeads: (params) => request(`/leads${toQueryString(params)}`),
-  leadsExportUrl: (params) => `/api/leads/export${toQueryString(params)}`,
-
   listRepresentatives: (params) => request(`/representatives${toQueryString(params)}`),
 
   getDashboard: () => request("/insights/dashboard"),
@@ -52,9 +49,5 @@ export const api = {
   deleteUser: (id) => request(`/users/${id}`, { method: "DELETE" }),
 
   listAuditLog: (params) => request(`/audit-log${toQueryString(params)}`),
-  auditLogExportUrl: (params) => `/api/audit-log/export${toQueryString(params)}`,
-
-  getPublicForm: (token) => request(`/public/form/${encodeURIComponent(token)}`),
-  submitPublicForm: (token, payload) =>
-    request(`/public/form/${encodeURIComponent(token)}`, { method: "POST", body: JSON.stringify(payload) })
+  auditLogExportUrl: (params) => `/api/audit-log/export${toQueryString(params)}`
 };

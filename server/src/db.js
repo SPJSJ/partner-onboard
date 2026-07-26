@@ -47,17 +47,6 @@ await client.executeMultiple(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
-  CREATE TABLE IF NOT EXISTS leads (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    partner_pk INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    phone TEXT,
-    message TEXT,
-    submitted_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
@@ -107,6 +96,10 @@ await ensureColumn("partners", "updated_by", "TEXT");
 await ensureColumn("representatives", "created_by", "TEXT");
 await ensureColumn("representatives", "updated_by", "TEXT");
 await ensureColumn("partners", "status", "TEXT NOT NULL DEFAULT 'Active'");
+
+// The Leads feature (and its public submission form) was dropped from
+// scope. Removes the table and any previously submitted lead data.
+await client.execute("DROP TABLE IF EXISTS leads");
 
 // Bootstrap the first admin account from env vars so existing deployments
 // (and local dev) keep working once auth moves from env-only to a real

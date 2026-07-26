@@ -5,7 +5,6 @@ const workspaceLinks = [
   { to: "/dashboard", label: "Dashboard", icon: "D" },
   { to: "/partners", label: "Partners", icon: "P" },
   { to: "/representatives", label: "Representatives", icon: "R" },
-  { to: "/leads", label: "Leads", icon: "L" },
   { to: "/reports", label: "Reports", icon: "T" }
 ];
 

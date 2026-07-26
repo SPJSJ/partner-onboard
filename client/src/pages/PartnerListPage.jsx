@@ -118,7 +118,6 @@ export default function PartnerListPage() {
                 <th>Contact</th>
                 <th>Phone</th>
                 <th>Representatives</th>
-                <th>Leads</th>
                 <th>Status</th>
                 <th>Created</th>
                 <th></th>
@@ -136,7 +135,6 @@ export default function PartnerListPage() {
                   </td>
                   <td>{p.phoneNumber || "—"}</td>
                   <td>{p.representativeCount}</td>
-                  <td>{p.leadCount}</td>
                   <td>
                     <StatusBadge status={p.status} />
                   </td>

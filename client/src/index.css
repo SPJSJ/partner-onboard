@@ -567,24 +567,6 @@ tbody tr.clickable:hover {
   color: var(--text-muted);
 }
 
-.link-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--slate-50);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 13px;
-  word-break: break-all;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
 .kv-list {
   display: flex;
   flex-direction: column;
@@ -626,7 +608,7 @@ tbody tr.clickable:hover {
   border: 1px solid #bfeed4;
 }
 
-/* Public lead form */
+/* Standalone centered pages (login) */
 .public-page {
   min-height: 100vh;
   background: var(--slate-50);
@@ -650,16 +632,4 @@ tbody tr.clickable:hover {
   align-items: center;
   gap: 10px;
   margin-bottom: 24px;
-}
-
-.prefill-box {
-  background: var(--slate-50);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 22px;
-}
-
-.prefill-box .kv-row {
-  font-size: 13px;
 }
