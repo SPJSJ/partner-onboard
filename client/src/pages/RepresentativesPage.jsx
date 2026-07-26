@@ -49,6 +49,7 @@ export default function RepresentativesPage() {
                 <th>Name</th>
                 <th>Partner</th>
                 <th>Created</th>
+                <th>Last Updated By</th>
               </tr>
             </thead>
             <tbody>
@@ -68,6 +69,7 @@ export default function RepresentativesPage() {
                     <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{r.partnerId}</div>
                   </td>
                   <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                  <td>{r.updatedBy || r.createdBy || "—"}</td>
                 </tr>
               ))}
             </tbody>

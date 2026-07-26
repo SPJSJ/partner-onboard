@@ -14,7 +14,9 @@ function serialize(r) {
     partnerId: r.partner_id,
     partnerName: r.partner_name,
     createdAt: r.created_at,
-    updatedAt: r.updated_at
+    updatedAt: r.updated_at,
+    createdBy: r.created_by,
+    updatedBy: r.updated_by
   };
 }
 

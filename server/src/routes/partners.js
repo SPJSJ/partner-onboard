@@ -80,7 +80,9 @@ function serializePartner(row) {
     formToken: row.form_token,
     formLink: `/form/${row.form_token}`,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by
   };
 }
 
@@ -91,7 +93,9 @@ function serializeRep(r) {
     lastName: r.last_name,
     isPrimary: !!r.is_primary,
     createdAt: r.created_at,
-    updatedAt: r.updated_at
+    updatedAt: r.updated_at,
+    createdBy: r.created_by,
+    updatedBy: r.updated_by
   };
 }
 
@@ -208,7 +212,9 @@ partnersRouter.get(
         { key: "representativeCount", label: "Representatives" },
         { key: "leadCount", label: "Leads" },
         { key: "createdAt", label: "Created At" },
-        { key: "updatedAt", label: "Updated At" }
+        { key: "createdBy", label: "Created By" },
+        { key: "updatedAt", label: "Updated At" },
+        { key: "updatedBy", label: "Updated By" }
       ],
       out
     );
@@ -323,8 +329,9 @@ partnersRouter.post(
         sql: `INSERT INTO partners (
           partner_id, partner_name, partner_type,
           contact_first_name, contact_last_name, contact_email, phone_number,
-          street1, street2, city, state, zip_code, country_code, form_token
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          street1, street2, city, state, zip_code, country_code, form_token,
+          created_by, updated_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           b.partnerId,
           b.partnerName.trim(),
@@ -339,7 +346,9 @@ partnersRouter.post(
           b.state,
           b.zipCode.trim(),
           b.countryCode,
-          formToken
+          formToken,
+          req.admin.email,
+          req.admin.email
         ]
       });
 
@@ -347,9 +356,17 @@ partnersRouter.post(
 
       for (const r of b.representatives) {
         await tx.execute({
-          sql: `INSERT INTO representatives (partner_pk, representative_id, first_name, last_name, is_primary)
-                VALUES (?, ?, ?, ?, ?)`,
-          args: [partnerPk, r.representativeId, r.firstName.trim(), r.lastName.trim(), r.isPrimary ? 1 : 0]
+          sql: `INSERT INTO representatives (partner_pk, representative_id, first_name, last_name, is_primary, created_by, updated_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          args: [
+            partnerPk,
+            r.representativeId,
+            r.firstName.trim(),
+            r.lastName.trim(),
+            r.isPrimary ? 1 : 0,
+            req.admin.email,
+            req.admin.email
+          ]
         });
       }
 
@@ -416,7 +433,7 @@ partnersRouter.put(
           partner_id = ?, partner_name = ?, partner_type = ?,
           contact_first_name = ?, contact_last_name = ?, contact_email = ?, phone_number = ?,
           street1 = ?, street2 = ?, city = ?, state = ?, zip_code = ?, country_code = ?,
-          updated_at = datetime('now')
+          updated_at = datetime('now'), updated_by = ?
           WHERE id = ?`,
         args: [
           b.partnerId,
@@ -432,6 +449,7 @@ partnersRouter.put(
           b.state,
           b.zipCode.trim(),
           b.countryCode,
+          req.admin.email,
           existing.id
         ]
       });
@@ -458,15 +476,23 @@ partnersRouter.put(
         if (original) {
           await tx.execute({
             sql: `UPDATE representatives SET
-              representative_id = ?, first_name = ?, last_name = ?, is_primary = ?, updated_at = datetime('now')
+              representative_id = ?, first_name = ?, last_name = ?, is_primary = ?, updated_at = datetime('now'), updated_by = ?
               WHERE id = ?`,
-            args: [r.representativeId, r.firstName.trim(), r.lastName.trim(), r.isPrimary ? 1 : 0, original.id]
+            args: [r.representativeId, r.firstName.trim(), r.lastName.trim(), r.isPrimary ? 1 : 0, req.admin.email, original.id]
           });
         } else {
           await tx.execute({
-            sql: `INSERT INTO representatives (partner_pk, representative_id, first_name, last_name, is_primary)
-                  VALUES (?, ?, ?, ?, ?)`,
-            args: [existing.id, r.representativeId, r.firstName.trim(), r.lastName.trim(), r.isPrimary ? 1 : 0]
+            sql: `INSERT INTO representatives (partner_pk, representative_id, first_name, last_name, is_primary, created_by, updated_by)
+                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+              existing.id,
+              r.representativeId,
+              r.firstName.trim(),
+              r.lastName.trim(),
+              r.isPrimary ? 1 : 0,
+              req.admin.email,
+              req.admin.email
+            ]
           });
         }
       }

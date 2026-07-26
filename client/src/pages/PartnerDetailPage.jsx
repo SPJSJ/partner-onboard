@@ -118,11 +118,25 @@ export default function PartnerDetailPage() {
               </div>
               <div className="kv-row">
                 <span className="kv-label">Created</span>
-                <span className="kv-value">{new Date(partner.createdAt).toLocaleString()}</span>
+                <span className="kv-value">
+                  {new Date(partner.createdAt).toLocaleString()}
+                  {partner.createdBy && (
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 400 }}>
+                      by {partner.createdBy}
+                    </div>
+                  )}
+                </span>
               </div>
               <div className="kv-row">
                 <span className="kv-label">Last Updated</span>
-                <span className="kv-value">{new Date(partner.updatedAt || partner.createdAt).toLocaleString()}</span>
+                <span className="kv-value">
+                  {new Date(partner.updatedAt || partner.createdAt).toLocaleString()}
+                  {(partner.updatedBy || partner.createdBy) && (
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 400 }}>
+                      by {partner.updatedBy || partner.createdBy}
+                    </div>
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -142,6 +156,11 @@ export default function PartnerDetailPage() {
                         <span className="badge badge-blue" style={{ marginLeft: 8 }}>
                           Primary
                         </span>
+                      )}
+                      {(r.updatedBy || r.createdBy) && (
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                          last updated by {r.updatedBy || r.createdBy}
+                        </div>
                       )}
                     </span>
                     <span className="kv-value">{r.representativeId}</span>
