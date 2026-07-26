@@ -59,6 +59,19 @@ await client.executeMultiple(`
   );
 `);
 
+// --- Safe, additive migrations: only add columns that are missing so
+// existing data (local or in Turso) is never touched or lost. ---
+async function ensureColumn(table, column, ddlType, backfillFromColumn) {
+  const info = await client.execute(`PRAGMA table_info(${table})`);
+  const cols = rowsToObjects(info).map((r) => r.name);
+  if (cols.includes(column)) return;
+
+  await client.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddlType}`);
+  if (backfillFromColumn) {
+    await client.execute(`UPDATE ${table} SET ${column} = ${backfillFromColumn} WHERE ${column} IS NULL`);
+  }
+}
+
 export function rowsToObjects(result) {
   const cols = result.columns;
   return result.rows.map((row) => Object.fromEntries(cols.map((c, i) => [c, row[i]])));
@@ -67,3 +80,6 @@ export function rowsToObjects(result) {
 export function rowToObject(result) {
   return rowsToObjects(result)[0] || null;
 }
+
+await ensureColumn("partners", "updated_at", "TEXT", "created_at");
+await ensureColumn("representatives", "updated_at", "TEXT", "created_at");

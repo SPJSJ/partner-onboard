@@ -18,6 +18,12 @@ export function isValidZip(zip, countryCode) {
   return zip.trim().length >= 3 && zip.trim().length <= 12;
 }
 
+// Business identifiers (Partner ID, Representative ID) are normalized to a
+// single consistent case so "p100" and "P100" are treated as the same ID.
+export function normalizeId(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
 export async function isPartnerIdAvailable(partnerId, excludePk = null) {
   if (!partnerId) return false;
   const result = excludePk

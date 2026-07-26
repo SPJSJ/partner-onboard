@@ -6,18 +6,27 @@ export default function PartnerListPage() {
   const navigate = useNavigate();
   const [partners, setPartners] = useState([]);
   const [search, setSearch] = useState("");
+  const [partnerType, setPartnerType] = useState("");
+  const [partnerTypes, setPartnerTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const params = { search, partnerType };
+
+  useEffect(() => {
+    api.getMeta().then((m) => setPartnerTypes(m.partnerTypes)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handle = setTimeout(() => {
       setLoading(true);
       api
-        .listPartners(search)
+        .listPartners(params)
         .then(setPartners)
         .finally(() => setLoading(false));
     }, 250);
     return () => clearTimeout(handle);
-  }, [search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, partnerType]);
 
   return (
     <div className="page">
@@ -27,19 +36,38 @@ export default function PartnerListPage() {
           <p className="page-subtitle">All onboarded partners and their representatives</p>
         </div>
         <div className="page-header-actions">
+          <a className="btn btn-secondary" href={api.partnersExportUrl(params)}>
+            Export CSV
+          </a>
           <button className="btn btn-primary" onClick={() => navigate("/partners/new")}>
             + Add Partner
           </button>
         </div>
       </div>
 
-      <input
-        className="search-input"
-        placeholder="Search by Partner ID or Name"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: 18 }}
-      />
+      <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
+        <input
+          className="search-input"
+          aria-label="Search partners"
+          placeholder="Search by Partner ID, Name, Contact Name, or Contact Email"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="search-input"
+          style={{ width: 220 }}
+          aria-label="Filter by Partner Type"
+          value={partnerType}
+          onChange={(e) => setPartnerType(e.target.value)}
+        >
+          <option value="">All Partner Types</option>
+          {partnerTypes.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="table-wrap">
         {loading ? (
@@ -59,10 +87,11 @@ export default function PartnerListPage() {
                 <th>Partner Name</th>
                 <th>Type</th>
                 <th>Contact</th>
-                <th>Location</th>
+                <th>Phone</th>
                 <th>Representatives</th>
                 <th>Leads</th>
                 <th>Created</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -75,12 +104,22 @@ export default function PartnerListPage() {
                     {p.contactFirstName} {p.contactLastName}
                     <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{p.contactEmail}</div>
                   </td>
-                  <td>
-                    {p.city}, {p.state}
-                  </td>
+                  <td>{p.phoneNumber || "—"}</td>
                   <td>{p.representativeCount}</td>
                   <td>{p.leadCount}</td>
                   <td>{new Date(p.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/partners/${encodeURIComponent(p.partnerId)}/edit`);
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

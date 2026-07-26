@@ -60,6 +60,9 @@ export default function PartnerDetailPage() {
           <button className="btn btn-secondary" onClick={() => navigate("/partners")}>
             Back to Partners
           </button>
+          <button className="btn btn-primary" onClick={() => navigate(`/partners/${encodeURIComponent(partnerId)}/edit`)}>
+            Edit Partner
+          </button>
         </div>
       </div>
 
@@ -68,6 +71,7 @@ export default function PartnerDetailPage() {
           Partner created. Share the unique lead form link below with {partner.partnerName}.
         </div>
       )}
+      {location.state?.justUpdated && <div className="alert alert-success">Partner updated successfully.</div>}
 
       <div className="detail-grid">
         <div>
@@ -111,6 +115,10 @@ export default function PartnerDetailPage() {
               <div className="kv-row">
                 <span className="kv-label">Created</span>
                 <span className="kv-value">{new Date(partner.createdAt).toLocaleString()}</span>
+              </div>
+              <div className="kv-row">
+                <span className="kv-label">Last Updated</span>
+                <span className="kv-value">{new Date(partner.updatedAt || partner.createdAt).toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -160,8 +168,15 @@ export default function PartnerDetailPage() {
           </div>
 
           <div className="card">
-            <div className="card-title">
-              Leads <span className="badge badge-green" style={{ marginLeft: 8 }}>{partner.leads.length}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="card-title">
+                Leads <span className="badge badge-green" style={{ marginLeft: 8 }}>{partner.leads.length}</span>
+              </div>
+              {partner.leads.length > 0 && (
+                <a className="btn btn-secondary btn-sm" href={api.leadsExportUrl({ partnerId: partner.partnerId })}>
+                  Export CSV
+                </a>
+              )}
             </div>
             <hr className="card-divider" />
             {partner.leads.length === 0 ? (

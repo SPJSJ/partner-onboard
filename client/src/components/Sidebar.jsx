@@ -1,16 +1,8 @@
 import { NavLink } from "react-router-dom";
 
-const workspaceLinks = [
-  { to: "/dashboard", label: "Dashboard", icon: "D" },
-  { to: "/wpforms-inbox", label: "WPForms Inbox", icon: "W" },
+const links = [
   { to: "/partners", label: "Partners", icon: "P" },
-  { to: "/representatives", label: "Representatives", icon: "R" },
-  { to: "/reports", label: "Reports", icon: "T" }
-];
-
-const adminLinks = [
-  { to: "/users-roles", label: "Users and Roles", icon: "U" },
-  { to: "/audit-log", label: "Audit Log", icon: "A" }
+  { to: "/leads", label: "Leads", icon: "L" }
 ];
 
 function NavItem({ to, label, icon }) {
@@ -31,12 +23,7 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-section-label">Workspace</div>
-      {workspaceLinks.map((l) => (
-        <NavItem key={l.to} {...l} />
-      ))}
-
-      <div className="sidebar-section-label">Administration</div>
-      {adminLinks.map((l) => (
+      {links.map((l) => (
         <NavItem key={l.to} {...l} />
       ))}
 
