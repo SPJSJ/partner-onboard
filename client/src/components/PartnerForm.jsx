@@ -12,7 +12,7 @@ const emptyRep = () => ({
 });
 
 export default function PartnerForm({ mode, initialForm, initialRepresentatives, originalPartnerId, onSubmit, onCancel }) {
-  const [meta, setMeta] = useState({ partnerTypes: [], states: [], countryCodes: [] });
+  const [meta, setMeta] = useState({ partnerTypes: [], states: [], countryCodes: [], partnerStatuses: [] });
   const [form, setForm] = useState(initialForm);
   const [representatives, setRepresentatives] = useState(initialRepresentatives);
   const [errors, setErrors] = useState({});
@@ -145,7 +145,7 @@ export default function PartnerForm({ mode, initialForm, initialRepresentatives,
                 ))}
               </SelectField>
             </div>
-            <div className="field-row single">
+            <div className="field-row">
               <TextField
                 id="partner-name"
                 label="Partner Name"
@@ -155,6 +155,20 @@ export default function PartnerForm({ mode, initialForm, initialRepresentatives,
                 error={fieldError("partnerName")}
                 placeholder="North Bay Dental Lab"
               />
+              <SelectField
+                id="partner-status"
+                label="Status"
+                required
+                value={form.status}
+                onChange={(e) => updateField("status", e.target.value)}
+                error={fieldError("status")}
+              >
+                {meta.partnerStatuses.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </SelectField>
             </div>
 
             <div className="card-title" style={{ marginTop: 6 }}>

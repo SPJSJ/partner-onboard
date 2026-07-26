@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { nanoid } from "nanoid";
 import { client, rowToObject, rowsToObjects } from "../db.js";
-import { PARTNER_TYPES, US_STATES, COUNTRY_CODES } from "../constants.js";
+import { PARTNER_TYPES, US_STATES, COUNTRY_CODES, PARTNER_STATUSES } from "../constants.js";
 import { sendCsv } from "../csv.js";
 import { requireAdmin } from "../auth.js";
 import { logAction } from "../audit.js";
@@ -20,7 +20,7 @@ export const partnersRouter = Router();
 const ah = (fn) => (req, res, next) => fn(req, res, next).catch(next);
 
 partnersRouter.get("/meta", (req, res) => {
-  res.json({ partnerTypes: PARTNER_TYPES, states: US_STATES, countryCodes: COUNTRY_CODES });
+  res.json({ partnerTypes: PARTNER_TYPES, states: US_STATES, countryCodes: COUNTRY_CODES, partnerStatuses: PARTNER_STATUSES });
 });
 
 partnersRouter.post(
@@ -77,6 +77,7 @@ function serializePartner(row) {
     state: row.state,
     zipCode: row.zip_code,
     countryCode: row.country_code,
+    status: row.status,
     formToken: row.form_token,
     formLink: `/form/${row.form_token}`,
     createdAt: row.created_at,
@@ -118,7 +119,7 @@ async function fetchLeads(partnerPk) {
   );
 }
 
-function buildListQuery({ search, partnerType }) {
+function buildListQuery({ search, partnerType, status }) {
   const clauses = [];
   const args = [];
 
@@ -138,6 +139,11 @@ function buildListQuery({ search, partnerType }) {
     args.push(partnerType);
   }
 
+  if (status) {
+    clauses.push(`status = ?`);
+    args.push(status);
+  }
+
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   return { where, args };
 }
@@ -147,7 +153,8 @@ partnersRouter.get(
   ah(async (req, res) => {
     const search = (req.query.search || "").trim();
     const partnerType = (req.query.partnerType || "").trim();
-    const { where, args } = buildListQuery({ search, partnerType });
+    const status = (req.query.status || "").trim();
+    const { where, args } = buildListQuery({ search, partnerType, status });
 
     const result = await client.execute({
       sql: `SELECT * FROM partners ${where} ORDER BY created_at DESC`,
@@ -175,7 +182,8 @@ partnersRouter.get(
   ah(async (req, res) => {
     const search = (req.query.search || "").trim();
     const partnerType = (req.query.partnerType || "").trim();
-    const { where, args } = buildListQuery({ search, partnerType });
+    const status = (req.query.status || "").trim();
+    const { where, args } = buildListQuery({ search, partnerType, status });
 
     const rows = rowsToObjects(
       await client.execute({ sql: `SELECT * FROM partners ${where} ORDER BY created_at DESC`, args })
@@ -209,6 +217,7 @@ partnersRouter.get(
         { key: "state", label: "State" },
         { key: "zipCode", label: "ZIP Code" },
         { key: "countryCode", label: "Country Code" },
+        { key: "status", label: "Status" },
         { key: "representativeCount", label: "Representatives" },
         { key: "leadCount", label: "Leads" },
         { key: "createdAt", label: "Created At" },
@@ -282,6 +291,7 @@ function validatePartnerPayload(b, { requireRepresentatives }) {
   if (b.phoneNumber && !isValidPhone(b.phoneNumber)) errors.phoneNumber = "Invalid phone number";
   if (b.zipCode && b.countryCode && !isValidZip(b.zipCode, b.countryCode)) errors.zipCode = "Invalid ZIP code";
   if (b.partnerType && !PARTNER_TYPES.includes(b.partnerType)) errors.partnerType = "Invalid partner type";
+  if (b.status && !PARTNER_STATUSES.includes(b.status)) errors.status = "Invalid status";
 
   return errors;
 }
@@ -329,9 +339,9 @@ partnersRouter.post(
         sql: `INSERT INTO partners (
           partner_id, partner_name, partner_type,
           contact_first_name, contact_last_name, contact_email, phone_number,
-          street1, street2, city, state, zip_code, country_code, form_token,
+          street1, street2, city, state, zip_code, country_code, status, form_token,
           created_by, updated_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           b.partnerId,
           b.partnerName.trim(),
@@ -346,6 +356,7 @@ partnersRouter.post(
           b.state,
           b.zipCode.trim(),
           b.countryCode,
+          b.status || "Active",
           formToken,
           req.admin.email,
           req.admin.email
@@ -432,7 +443,7 @@ partnersRouter.put(
         sql: `UPDATE partners SET
           partner_id = ?, partner_name = ?, partner_type = ?,
           contact_first_name = ?, contact_last_name = ?, contact_email = ?, phone_number = ?,
-          street1 = ?, street2 = ?, city = ?, state = ?, zip_code = ?, country_code = ?,
+          street1 = ?, street2 = ?, city = ?, state = ?, zip_code = ?, country_code = ?, status = ?,
           updated_at = datetime('now'), updated_by = ?
           WHERE id = ?`,
         args: [
@@ -449,6 +460,7 @@ partnersRouter.put(
           b.state,
           b.zipCode.trim(),
           b.countryCode,
+          b.status || existing.status || "Active",
           req.admin.email,
           existing.id
         ]

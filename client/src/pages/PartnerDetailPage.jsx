@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import StatusBadge from "../components/StatusBadge.jsx";
 
 export default function PartnerDetailPage() {
   const { partnerId } = useParams();
@@ -53,7 +54,9 @@ export default function PartnerDetailPage() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">{partner.partnerName}</h1>
+          <h1 className="page-title">
+            {partner.partnerName} <StatusBadge status={partner.status} />
+          </h1>
           <p className="page-subtitle">
             Partner ID {partner.partnerId} &middot; {partner.partnerType}
           </p>

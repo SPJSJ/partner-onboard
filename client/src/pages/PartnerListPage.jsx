@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import StatusBadge from "../components/StatusBadge.jsx";
 
 export default function PartnerListPage() {
   const navigate = useNavigate();
@@ -9,13 +10,21 @@ export default function PartnerListPage() {
   const [partners, setPartners] = useState([]);
   const [search, setSearch] = useState("");
   const [partnerType, setPartnerType] = useState("");
+  const [status, setStatus] = useState("");
   const [partnerTypes, setPartnerTypes] = useState([]);
+  const [partnerStatuses, setPartnerStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const params = { search, partnerType };
+  const params = { search, partnerType, status };
 
   useEffect(() => {
-    api.getMeta().then((m) => setPartnerTypes(m.partnerTypes)).catch(() => {});
+    api
+      .getMeta()
+      .then((m) => {
+        setPartnerTypes(m.partnerTypes);
+        setPartnerStatuses(m.partnerStatuses);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -28,7 +37,7 @@ export default function PartnerListPage() {
     }, 250);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, partnerType]);
+  }, [search, partnerType, status]);
 
   return (
     <div className="page">
@@ -71,6 +80,20 @@ export default function PartnerListPage() {
             </option>
           ))}
         </select>
+        <select
+          className="search-input"
+          style={{ width: 180 }}
+          aria-label="Filter by Status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">All Statuses</option>
+          {partnerStatuses.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="table-wrap">
@@ -96,6 +119,7 @@ export default function PartnerListPage() {
                 <th>Phone</th>
                 <th>Representatives</th>
                 <th>Leads</th>
+                <th>Status</th>
                 <th>Created</th>
                 <th></th>
               </tr>
@@ -113,6 +137,9 @@ export default function PartnerListPage() {
                   <td>{p.phoneNumber || "—"}</td>
                   <td>{p.representativeCount}</td>
                   <td>{p.leadCount}</td>
+                  <td>
+                    <StatusBadge status={p.status} />
+                  </td>
                   <td>{new Date(p.createdAt).toLocaleDateString()}</td>
                   <td>
                     {isAdmin && (

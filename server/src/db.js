@@ -106,6 +106,7 @@ await ensureColumn("partners", "created_by", "TEXT");
 await ensureColumn("partners", "updated_by", "TEXT");
 await ensureColumn("representatives", "created_by", "TEXT");
 await ensureColumn("representatives", "updated_by", "TEXT");
+await ensureColumn("partners", "status", "TEXT NOT NULL DEFAULT 'Active'");
 
 // Bootstrap the first admin account from env vars so existing deployments
 // (and local dev) keep working once auth moves from env-only to a real

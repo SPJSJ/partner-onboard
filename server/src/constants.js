@@ -11,6 +11,8 @@ export const PARTNER_TYPES = [
 
 export const COUNTRY_CODES = ["US", "CA", "MX", "GB", "AU", "Other"];
 
+export const PARTNER_STATUSES = ["Active", "Pending", "Inactive"];
+
 export const US_STATES = [
   "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut",
   "Delaware","District of Columbia","Florida","Georgia","Hawaii","Idaho","Illinois",

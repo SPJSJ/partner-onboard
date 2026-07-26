@@ -48,7 +48,8 @@ export default function EditPartnerPage() {
     city: partner.city,
     state: partner.state,
     zipCode: partner.zipCode,
-    countryCode: partner.countryCode
+    countryCode: partner.countryCode,
+    status: partner.status || "Active"
   };
 
   const initialRepresentatives = partner.representatives.map((r) => ({

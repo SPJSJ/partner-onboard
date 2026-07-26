@@ -15,7 +15,8 @@ const emptyForm = {
   city: "",
   state: "",
   zipCode: "",
-  countryCode: "US"
+  countryCode: "US",
+  status: "Active"
 };
 
 export default function AddPartnerPage() {

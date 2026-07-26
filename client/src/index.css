@@ -471,6 +471,11 @@ a {
   color: var(--amber-600);
 }
 
+.badge-red {
+  background: #fdecea;
+  color: var(--red-600);
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
